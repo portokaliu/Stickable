@@ -1,0 +1,9 @@
+{
+    "id" : "Stickable",
+    "version" : "0.1.0-SNAPSHOT",
+    "author" : "",
+    "displayName" : "Stickable",
+    "description" : "",
+    "dependencies" : [],
+    "serverSideOnly" : false
+}
