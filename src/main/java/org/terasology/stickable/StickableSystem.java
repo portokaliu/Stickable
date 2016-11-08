@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terasology.entitySystem.entity.EntityManager;
 import org.terasology.entitySystem.entity.EntityRef;
+import org.terasology.entitySystem.event.EventPriority;
 import org.terasology.entitySystem.event.ReceiveEvent;
 import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterMode;
@@ -60,19 +61,20 @@ public class StickableSystem extends BaseComponentSystem implements UpdateSubscr
         }
     }
 
-    @ReceiveEvent(components = {StickableComponent.class})
+    @ReceiveEvent(components = {StickableComponent.class}, priority = EventPriority.PRIORITY_HIGH)
     public void onItemImpact(ImpactEvent event, EntityRef entity) {
         //place block properly
         BlockItemComponent blockItem = entity.getComponent(BlockItemComponent.class);
         if (blockItem == null) { return; }
         BlockFamily type = blockItem.blockFamily;
 
-        EntityRef hitEntity = event.getHitEntity();
+        EntityRef hitEntity = event.getImpactEntity();
         if (hitEntity == null){ return; }
 
         BlockComponent blockComponent = hitEntity.getComponent(BlockComponent.class);
-        Vector3i targetBlock = blockComponent.getPosition();
-        Vector3i placementPos = new Vector3i(targetBlock);
+        if (blockComponent == null) { return; }
+
+        Vector3i placementPos = new Vector3i(blockComponent.getPosition());
         placementPos.add(event.getSide().getVector3i());
 
         if (!worldProvider.getBlock(placementPos).isReplacementAllowed()) { return; }
