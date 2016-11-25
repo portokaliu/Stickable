@@ -25,9 +25,14 @@ import org.terasology.entitySystem.systems.BaseComponentSystem;
 import org.terasology.entitySystem.systems.RegisterMode;
 import org.terasology.entitySystem.systems.RegisterSystem;
 import org.terasology.entitySystem.systems.UpdateSubscriberSystem;
+import org.terasology.logic.health.BeforeDestroyEvent;
+import org.terasology.logic.health.DestroyEvent;
+import org.terasology.logic.health.DoDestroyEvent;
+import org.terasology.logic.health.EngineDamageTypes;
 import org.terasology.logic.inventory.PickupComponent;
 import org.terasology.math.geom.Vector3i;
-import org.terasology.physics.events.ImpactEvent;
+import org.terasology.physics.components.RigidBodyComponent;
+import org.terasology.physics.events.BlockImpactEvent;
 import org.terasology.registry.In;
 import org.terasology.world.BlockEntityRegistry;
 import org.terasology.world.WorldProvider;
@@ -55,15 +60,27 @@ public class StickableSystem extends BaseComponentSystem implements UpdateSubscr
             StickableComponent stickableComponent = entity.getComponent(StickableComponent.class);
             if ( stickableComponent == null )
             {
-                stickableComponent = new StickableComponent();
-                entity.addComponent(stickableComponent);
+//                stickableComponent = new StickableComponent();
+//                entity.addComponent(stickableComponent);
             }
+            else{
+                if (stickableComponent.shouldBeDestroyed) {
+                    entity.destroy();
+                }
+            }
+
         }
     }
 
-    @ReceiveEvent(components = {StickableComponent.class}, priority = EventPriority.PRIORITY_HIGH)
-    public void onItemImpact(ImpactEvent event, EntityRef entity) {
-        //place block properly
+    @ReceiveEvent(priority = EventPriority.PRIORITY_HIGH)
+    public void onDestroy(DoDestroyEvent event, EntityRef entity) {
+        StickableComponent stickableComponent = entity.getComponent(StickableComponent.class);
+        boolean b = true;
+    }
+
+    //@ReceiveEvent(components = {StickableComponent.class}, priority = EventPriority.PRIORITY_HIGH)
+    @ReceiveEvent(priority = EventPriority.PRIORITY_HIGH)
+    public void onItemImpact(BlockImpactEvent event, EntityRef entity) {
         BlockItemComponent blockItem = entity.getComponent(BlockItemComponent.class);
         if (blockItem == null) { return; }
         BlockFamily type = blockItem.blockFamily;
@@ -75,7 +92,8 @@ public class StickableSystem extends BaseComponentSystem implements UpdateSubscr
         if (blockComponent == null) { return; }
 
         Vector3i placementPos = new Vector3i(blockComponent.getPosition());
-        placementPos.add(event.getSide().getVector3i());
+
+        placementPos.add(new Vector3i(event.getImpactNormal()));
 
         if (!worldProvider.getBlock(placementPos).isReplacementAllowed()) { return; }
         Block block = type.getBlockForPlacement(worldProvider, blockEntityRegistry, placementPos, event.getSide(), event.getSide());
@@ -83,6 +101,10 @@ public class StickableSystem extends BaseComponentSystem implements UpdateSubscr
         PlaceBlocks placeBlocks = new PlaceBlocks(placementPos, block, EntityRef.NULL);
         worldProvider.getWorldEntity().send(placeBlocks);
 
-        entity.destroy();
+        StickableComponent stickableComponent = entity.getComponent(StickableComponent.class);
+        if (stickableComponent != null){
+            stickableComponent.shouldBeDestroyed = true;
+            entity.saveComponent(stickableComponent);
+        }
     }
 }

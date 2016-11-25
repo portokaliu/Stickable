@@ -18,4 +18,5 @@ package org.terasology.stickable;
 import org.terasology.entitySystem.Component;
 
 public class StickableComponent implements Component {
+    public boolean shouldBeDestroyed = false;
 }
